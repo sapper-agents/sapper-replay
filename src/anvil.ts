@@ -3,6 +3,10 @@ import { createPublicClient, createTestClient, http, type PublicClient, type Tes
 export type Fork = {
   url: string;
   block: number;
+  // First locally mined block: same state as `block`. Reads and replays start here because some
+  // chains (Arbitrum Orbit among them) serve headers without blob fields, which anvil rejects for
+  // calls at the forked block itself.
+  base: number;
   chainId: number;
   pub: PublicClient;
   test: TestClient<"anvil">;
@@ -57,12 +61,18 @@ export async function fork(opts: { upstream: string; block: number; chainId: num
   }
   const transport = http(url, { timeout: 60_000 });
   const chain = { id: opts.chainId, name: "fork", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [url] } } } as const;
+  const pub = createPublicClient({ chain, transport, pollingInterval: 50 }) as PublicClient;
+  const test = createTestClient({ chain, mode: "anvil", transport });
+  const pinned = await pub.getBlock({ blockNumber: BigInt(opts.block) });
+  await test.setNextBlockTimestamp({ timestamp: pinned.timestamp + 1n });
+  await test.mine({ blocks: 1 });
   return {
     url,
     block: opts.block,
+    base: opts.block + 1,
     chainId: opts.chainId,
-    pub: createPublicClient({ chain, transport, pollingInterval: 50 }) as PublicClient,
-    test: createTestClient({ chain, mode: "anvil", transport }),
+    pub,
+    test,
     stop: async () => {
       proc.kill();
       await proc.exited;

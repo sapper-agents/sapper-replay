@@ -95,7 +95,7 @@ Each rule compares two operands. An operand is a view call or a constant.
 
 ### Measurement and result hash
 
-The engine records the attacker's freshness and privileges, each transaction's status and gas, every rule before and after, and the attacker's balance of ETH and each watched token. Gas price and base fee are zero on the fork, block timestamps advance one second per block from the pinned block, so the measurement is identical on every machine. The result hash is the keccak hash of its canonical JSON.
+The engine records the attacker's freshness and privileges, each transaction's status and gas, every rule before and after, and the attacker's balance of ETH and each watched token. Gas price and base fee are zero on the fork. Right after forking, the engine mines one empty block one second after the pinned block and measures from there; transactions follow at one-second intervals. The measurement is therefore identical on every machine, and the fork works on chains whose headers carry no blob fields, such as Arbitrum Orbit chains like Robinhood Chain. The result hash is the keccak hash of its canonical JSON.
 
 ## Use as a library
 

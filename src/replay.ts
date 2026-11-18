@@ -53,7 +53,8 @@ export async function replay(fork: Fork, raw: Bundle, rules: Rule[], watchTokens
   const b = bundleSchema.parse(raw);
   const hash = bundleHash(b);
   const attacker = b.attacker as Address;
-  const pinned = BigInt(b.forkBlock);
+  if (fork.block !== b.forkBlock) throw new Error(`fork is pinned at ${fork.block}, bundle expects ${b.forkBlock}`);
+  const pinned = BigInt(fork.base);
 
   const [nonce, code] = await Promise.all([
     fork.pub.getTransactionCount({ address: attacker, blockNumber: pinned }),
